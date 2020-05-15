@@ -1,0 +1,36 @@
+---
+title: "Project 2 Report"
+author: "Chanel Fraikin and Benjamin Kelly"
+output: html_document
+---
+
+# Global Trajectory
+```{r obj1, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Global Map
+```{r obj2, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Narrowing Down Hot Spots
+```{r obj3, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Zooming Into Our State
+```{r obj4, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Digging Deeper
+```{r obj5, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
