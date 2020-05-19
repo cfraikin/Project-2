@@ -42,6 +42,49 @@ ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) + geom_point()+ggtitl
 
 # Global Map
 ```{r obj2}
+library(htmltools)
+library(leaflet)
+confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+deaths_ds<-read.csv("time_series_covid19_deaths_global.csv", 
+                    header=TRUE, stringsAsFactors=FALSE)
+recovered_ds<-read.csv("time_series_covid19_recovered_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+
+confirmed_sum<-confirmed_ds%>%select(Province.State,Country.Region, Lat, Long, X5.10.20)
+
+death_sum<-deaths_ds%>%select(Province.State,Country.Region, Lat, Long, X5.10.20)
+
+recovered_sum<-recovered_ds%>%select(Province.State,Country.Region, Lat, Long, X5.10.20)
+
+head(confirmed_sum)
+
+dat <- rbind(confirmed_sum, death_sum, recovered_sum)
+dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_sum)[1]), rep("Death", dim(death_sum)[1]), rep("Recovered", dim(recovered_sum)[1])))
+
+head(dat)
+
+#data_long <- gather(dat, Dates, SumCases,  X1.22.20:X5.10.20, factor_key=TRUE)
+
+
+# Create a palette that maps factor levels to colors
+pal <- colorFactor(c("blue", "cyan", "red"), domain = c("Confirmed", "Death", "Recovered"))
+
+leaflet(dat) %>% addTiles() %>%
+  addCircles(
+    radius = ~sqrt(dat$X5.10.20)*1000,
+    color = ~pal(dataset),
+    stroke = TRUE, 
+    fillOpacity = 0.4,
+    group = ~dataset,
+    label = ~htmlEscape(Country.Region), #this needs to change if province/state is available
+    popup = ~htmlEscape(X5.10.20) #this needs to say Deaths: and then the number
+) %>%
+  addLayersControl(
+    overlayGroups = c("Confirmed", "Death", "Recovered"),
+    options = layersControlOptions(collapsed = FALSE)
+  ) 
+
 
 
 ```
