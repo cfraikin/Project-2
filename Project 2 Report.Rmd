@@ -1,11 +1,38 @@
 ---
 title: "Project 2 Report"
 author: "Chanel Fraikin and Benjamin Kelly"
-output: html_document
+date: "`r Sys.Date()`"
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 3
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
 ---
 
-# Global Trajectory
-```{r obj1}
+```{r setup, include = FALSE}
+
+#### Load necessary packages ####
+# * These packages are not necessary to complete the assignment and or only used 
+#   to provide an example. 
+packages <- c("knitr", "kableExtra", "magrittr", "readr", "geosphere", "dplyr",
+              "tidyr", "ggplot2", "scales", "leaflet")
+
+install_me <- packages[!(packages %in% installed.packages()[, "Package"])]
+if (length(install_me)) install.packages(install_me)
 
 library(knitr)
 library(kableExtra)
@@ -15,7 +42,12 @@ library(geosphere)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(scales)
+library(leaflet)
+```
 
+# Global Trajectory
+```{r obj1}
 confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
 deaths_ds<-read.csv("time_series_covid19_deaths_global.csv", 
@@ -28,15 +60,21 @@ death_sum<-deaths_ds%>%select(X1.22.20:X5.10.20)%>%summarise_all(sum)
 recovered_sum<-recovered_ds%>%select(X1.22.20:X5.10.20)%>%summarise_all(sum)
 
 
-dat <- rbind(confirmed_sum, death_sum, recovered_sum)
-dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_sum)[1]), rep("Death", dim(death_sum)[1]), rep("Recovered", dim(recovered_sum)[1])))
+dat <- rbind(confirmed_sum, recovered_sum, death_sum)
+dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_sum)[1]),
+                        rep("Recovered", dim(recovered_sum)[1]),
+                        rep("Deaths", dim(death_sum)[1])))
 
 data_long <- gather(dat, Dates, SumCases,  X1.22.20:X5.10.20, factor_key=TRUE)
 
-
-ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) + geom_point()+ggtitle("Global Trajectory for COVID-19") + scale_x_discrete(breaks=c("X2.1.20","X3.1.20","X4.1.20", "X5.1.20"),
-        labels=c("Feb", "Mar", "Apr", "May"))+labs(y= "Cases", x = "Date")
-
+ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) + 
+  scale_color_discrete(breaks=c("Confirmed", "Recovered", "Deaths")) +
+  geom_point() + ggtitle("Global Trajectory for COVID-19") + 
+  scale_x_discrete(breaks=c("X2.1.20","X3.1.20","X4.1.20", "X5.1.20"),
+                   labels=c("Feb", "Mar", "Apr", "May")) +
+  labs(y= "Cases", x = "Date") +
+  scale_y_continuous(breaks=pretty_breaks(n=5), 
+                     labels=function(x) format(x, scientific = FALSE))
 
 ```
 
