@@ -3,7 +3,7 @@ title: "Project 2 Report"
 author: "Chanel Fraikin and Benjamin Kelly"
 date: "`r Sys.Date()`"
 output: 
-  pdf_document:
+  html_document:
     toc: true
     toc_depth: 3
 header-includes:
