@@ -29,7 +29,7 @@ header-includes:
 # * These packages are not necessary to complete the assignment and or only used 
 #   to provide an example. 
 packages <- c("knitr", "kableExtra", "magrittr", "readr", "geosphere", "dplyr",
-              "tidyr", "ggplot2", "scales", "leaflet")
+              "tidyr", "ggplot2", "scales", "leaflet", "htmltools")
 
 install_me <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(install_me)) install.packages(install_me)
@@ -44,29 +44,33 @@ library(tidyr)
 library(ggplot2)
 library(scales)
 library(leaflet)
+library(htmltools)
 ```
 
 # Global Trajectory
 ```{r obj1}
+# Load Datasets
 confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+recovered_ds<-read.csv("time_series_covid19_recovered_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
 deaths_ds<-read.csv("time_series_covid19_deaths_global.csv", 
                     header=TRUE, stringsAsFactors=FALSE)
-recovered_ds<-read.csv("time_series_covid19_recovered_global.csv", 
-                       header=TRUE, stringsAsFactors=FALSE)
 
-confirmed_sum<-confirmed_ds%>%select(X1.22.20:X5.10.20)%>%summarise_all(sum)
-death_sum<-deaths_ds%>%select(X1.22.20:X5.10.20)%>%summarise_all(sum)
-recovered_sum<-recovered_ds%>%select(X1.22.20:X5.10.20)%>%summarise_all(sum)
+# Get totals per day through summation
+confirmed_sum<-confirmed_ds%>%select(-(1:4))%>%summarise_all(sum)
+recovered_sum<-recovered_ds%>%select(-(1:4))%>%summarise_all(sum)
+death_sum<-deaths_ds%>%select(-(1:4))%>%summarise_all(sum)
 
-
+# Merge datasets into one and add column for categories
 dat <- rbind(confirmed_sum, recovered_sum, death_sum)
 dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_sum)[1]),
                         rep("Recovered", dim(recovered_sum)[1]),
                         rep("Deaths", dim(death_sum)[1])))
 
-data_long <- gather(dat, Dates, SumCases,  X1.22.20:X5.10.20, factor_key=TRUE)
+data_long <- gather(dat, Dates, SumCases, -dataset, factor_key=TRUE)
 
+# Create Plot
 ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) + 
   scale_color_discrete(breaks=c("Confirmed", "Recovered", "Deaths")) +
   geom_point() + ggtitle("Global Trajectory for COVID-19") + 
@@ -74,57 +78,49 @@ ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) +
                    labels=c("Feb", "Mar", "Apr", "May")) +
   labs(y= "Cases", x = "Date") +
   scale_y_continuous(breaks=pretty_breaks(n=5), 
-                     labels=function(x) format(x, scientific = FALSE))
+                     labels=scales::comma)
 
 ```
 
 # Global Map
 ```{r obj2}
-library(htmltools)
-library(leaflet)
-confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
-                       header=TRUE, stringsAsFactors=FALSE)
-deaths_ds<-read.csv("time_series_covid19_deaths_global.csv", 
-                    header=TRUE, stringsAsFactors=FALSE)
-recovered_ds<-read.csv("time_series_covid19_recovered_global.csv", 
-                       header=TRUE, stringsAsFactors=FALSE)
+last_date <- names(confirmed_ds)[ncol(confirmed_ds)]
+confirmed_last<-confirmed_ds%>%select(Province.State, Country.Region, 
+                                      Lat, Long, starts_with(last_date))
+recovered_last<-recovered_ds%>%select(Province.State, Country.Region, 
+                                      Lat, Long, starts_with(last_date))
+deaths_last<-deaths_ds%>%select(Province.State, Country.Region, 
+                                Lat, Long, starts_with(last_date))
 
-confirmed_sum<-confirmed_ds%>%select(Province.State,Country.Region, Lat, Long, X5.10.20)
+names(confirmed_last)[ncol(confirmed_last)]<-"Total"
+names(recovered_last)[ncol(recovered_last)]<-"Total"
+names(deaths_last)[ncol(deaths_last)]<-"Total"
 
-death_sum<-deaths_ds%>%select(Province.State,Country.Region, Lat, Long, X5.10.20)
-
-recovered_sum<-recovered_ds%>%select(Province.State,Country.Region, Lat, Long, X5.10.20)
-
-head(confirmed_sum)
-
-dat <- rbind(confirmed_sum, death_sum, recovered_sum)
-dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_sum)[1]), rep("Death", dim(death_sum)[1]), rep("Recovered", dim(recovered_sum)[1])))
-
-head(dat)
-
-#data_long <- gather(dat, Dates, SumCases,  X1.22.20:X5.10.20, factor_key=TRUE)
-
+dat <- rbind(confirmed_last, recovered_last, deaths_last)
+dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_last)[1]),
+                        rep("Recovered", dim(recovered_last)[1]),
+                        rep("Deaths", dim(deaths_last)[1])))
 
 # Create a palette that maps factor levels to colors
-pal <- colorFactor(c("blue", "cyan", "red"), domain = c("Confirmed", "Death", "Recovered"))
+pal <- colorFactor(c("blue", "cyan", "red"),
+                   domain = c("Confirmed", "Recovered", "Deaths"))
 
 leaflet(dat) %>% addTiles() %>%
   addCircles(
-    radius = ~sqrt(dat$X5.10.20)*1000,
+    radius = ~sqrt(dat$Total)*1000,
     color = ~pal(dataset),
     stroke = TRUE, 
     fillOpacity = 0.4,
     group = ~dataset,
-    label = ~htmlEscape(Country.Region), #this needs to change if province/state is available
-    popup = ~htmlEscape(X5.10.20) #this needs to say Deaths: and then the number
-) %>%
+    label = paste(ifelse(dat$Province.State == "", 
+                         dat$Country.Region, 
+                         dat$Province.State)),
+    popup = paste(dat$dataset, ": ", dat$Total, sep="")
+    ) %>%
   addLayersControl(
-    overlayGroups = c("Confirmed", "Death", "Recovered"),
+    overlayGroups = c("Confirmed", "Recovered", "Deaths"),
     options = layersControlOptions(collapsed = FALSE)
-  ) 
-
-
-
+    ) 
 ```
 
 # Narrowing Down Hot Spots
