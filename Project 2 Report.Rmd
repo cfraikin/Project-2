@@ -215,27 +215,26 @@ dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_sum)[1]),
 data_long <- gather(dat, Dates, SumCases, -dataset, factor_key=TRUE)
 
 # Create Plot
-ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) + 
-  scale_color_discrete(breaks=c("Confirmed", "Deaths")) +
+p1<-ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) + 
+  scale_color_discrete(name= "California Total",breaks=c("Confirmed", "Deaths")) +
   geom_point() + ggtitle("California's Trajectory for COVID-19") + 
   scale_x_discrete(breaks=c("X2.1.20","X3.1.20","X4.1.20", "X5.1.20"),
                    labels=c("Feb", "Mar", "Apr", "May")) +
   labs(y= "Cases", x = "Date") +
   scale_y_continuous(breaks=pretty_breaks(n=5), 
                      labels=scales::comma)+
-  geom_vline(xintercept="X3.19.20", linetype="dotted")+
-  labs(fill = "California Total")
+  geom_vline(xintercept="X3.19.20", linetype="dotted") 
+print(p1)
 
-
-#need to change legend name 
+#Second scatter plot
 last_date <- names(confirmed_ds)[ncol(confirmed_ds)]
 top_confirmed_cities<-confirmed_ds%>%filter(Province_State=="California")%>%group_by(Admin2)%>%select(-(1:11))%>%summarise_all(sum)%>%arrange(-X5.14.20) #having a hard time making this the last column with last_date
 dat<-top_confirmed_cities[1:3,]
 data_long <- gather(dat, Dates, SumCases, -Admin2, factor_key=TRUE)
 
 # Create Plot
-ggplot(data_long, aes(x=Dates, y=SumCases, color=Admin2)) + 
-  scale_color_discrete(breaks=c("Los Angeles", "Riverside", "San Diego")) +
+p2<-ggplot(data_long, aes(x=Dates, y=SumCases, color=Admin2)) + 
+  scale_color_discrete(name="Top Confirmed Cities", breaks=c("Los Angeles", "Riverside", "San Diego")) +
   geom_point() + ggtitle("California Trajectory for COVID-19") + 
   scale_x_discrete(breaks=c("X2.1.20","X3.1.20","X4.1.20", "X5.1.20"),
                    labels=c("Feb", "Mar", "Apr", "May")) +
@@ -243,7 +242,9 @@ ggplot(data_long, aes(x=Dates, y=SumCases, color=Admin2)) +
   scale_y_continuous(breaks=pretty_breaks(n=5), 
                      labels=scales::comma)+
    geom_vline(xintercept="X3.19.20", linetype="dotted")
-#need to change plot labels
+
+print(p2)
+
 
 ```
 
