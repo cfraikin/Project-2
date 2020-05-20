@@ -84,6 +84,7 @@ ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) +
 
 # Global Map
 ```{r obj2}
+# Get data form last date which represents total
 last_date <- names(confirmed_ds)[ncol(confirmed_ds)]
 confirmed_last<-confirmed_ds%>%select(Province.State, Country.Region, 
                                       Lat, Long, starts_with(last_date))
@@ -92,10 +93,13 @@ recovered_last<-recovered_ds%>%select(Province.State, Country.Region,
 deaths_last<-deaths_ds%>%select(Province.State, Country.Region, 
                                 Lat, Long, starts_with(last_date))
 
-names(confirmed_last)[ncol(confirmed_last)]<-"Total"
-names(recovered_last)[ncol(recovered_last)]<-"Total"
-names(deaths_last)[ncol(deaths_last)]<-"Total"
+# Rename last column to make calling it easier
+# because R...
+names(confirmed_last)[ncol(confirmed_last)]<-"Count"
+names(recovered_last)[ncol(recovered_last)]<-"Count"
+names(deaths_last)[ncol(deaths_last)]<-"Count"
 
+# Merge data
 dat <- rbind(confirmed_last, recovered_last, deaths_last)
 dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_last)[1]),
                         rep("Recovered", dim(recovered_last)[1]),
@@ -105,9 +109,10 @@ dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_last)[1]),
 pal <- colorFactor(c("blue", "cyan", "red"),
                    domain = c("Confirmed", "Recovered", "Deaths"))
 
+# Create interactive map
 leaflet(dat) %>% addTiles() %>%
   addCircles(
-    radius = ~sqrt(dat$Total)*1000,
+    radius = ~sqrt(dat$Count)*1000,
     color = ~pal(dataset),
     stroke = TRUE, 
     fillOpacity = 0.4,
@@ -115,7 +120,7 @@ leaflet(dat) %>% addTiles() %>%
     label = paste(ifelse(dat$Province.State == "", 
                          dat$Country.Region, 
                          dat$Province.State)),
-    popup = paste(dat$dataset, ": ", dat$Total, sep="")
+    popup = paste(dat$dataset, ": ", dat$Count, sep="")
     ) %>%
   addLayersControl(
     overlayGroups = c("Confirmed", "Recovered", "Deaths"),
@@ -125,7 +130,68 @@ leaflet(dat) %>% addTiles() %>%
 
 # Narrowing Down Hot Spots
 ```{r obj3}
+# Combine Province/Country
+confirmed_last$Location <- ifelse(confirmed_last$Province.State == "", 
+                                  paste(confirmed_last$Country.Region), 
+                                  paste(confirmed_last$Province.State,
+                                    confirmed_last$Country.Region, sep=", "))
+recovered_last$Location <- ifelse(recovered_last$Province.State == "", 
+                                  paste(recovered_last$Country.Region), 
+                                  paste(recovered_last$Province.State,
+                                    recovered_last$Country.Region, sep=", "))
+deaths_last$Location <- ifelse(deaths_last$Province.State == "", 
+                               paste(deaths_last$Country.Region), 
+                               paste(deaths_last$Province.State,
+                                 deaths_last$Country.Region, sep=", "))
 
+confirmed_totals<-arrange(select(confirmed_last, Location, Count), -Count)
+recovered_totals<-arrange(select(recovered_last, Location, Count), -Count)
+deaths_totals<-arrange(select(deaths_last, Location, Count), -Count)
+
+# Rename columns so they do not get merged
+names(confirmed_totals)<-c("Location_c", "Count_c")
+names(recovered_totals)<-c("Location_r", "Count_r")
+names(deaths_totals)<-c("Location_d", "Count_d")
+
+max_rows<-max(nrow(confirmed_totals), nrow(recovered_totals), 
+              nrow(deaths_totals))
+
+# Wanted to use cbind.fill here, but can't because R...
+if (nrow(confirmed_totals) < max_rows) {
+  empty_df<-data.frame(matrix("NA", nrow = (max_rows - nrow(confirmed_totals)), 
+                              ncol = 2))
+  names(empty_df)<-c("Location_c", "Count_c")
+  confirmed_totals<-rbind(confirmed_totals, empty_df)
+}
+
+if (nrow(recovered_totals) < max_rows) {
+  empty_df<-data.frame(matrix("NA", nrow = (max_rows - nrow(recovered_totals)), 
+                              ncol = 2))
+  names(empty_df)<-c("Location_r", "Count_r")
+  recovered_totals<-rbind(recovered_totals, empty_df)
+}
+
+if (nrow(deaths_totals) < max_rows) {
+  empty_df<-data.frame(matrix("NA", nrow = (max_rows - nrow(deaths_totals)), 
+                              ncol = 2))
+  names(empty_df)<-c("Location_d", "Count_d")
+  deaths_totals<-rbind(deaths_totals, empty_df)
+}
+
+total_ds<-cbind(confirmed_totals, recovered_totals, deaths_totals)
+
+# Add Ranking column
+total_ds<-cbind(data.frame(Rank=rownames(total_ds)), total_ds)
+
+# Make Kabble Table
+total_ds %>%
+  kable(col.names = c("Rank", "Country", "Count", "Country", 
+                      "Count", "Country", "Count"),
+        caption="Table of Top Countries") %>%
+  kable_styling("striped") %>%
+  add_header_above(c(" " = 1, "Confirmations" = 2, 
+                     "Recoveries" = 2, "Deaths" = 2)) %>%
+  scroll_box(width = "100%", height = "600px")
 
 ```
 
