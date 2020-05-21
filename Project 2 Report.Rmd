@@ -29,7 +29,8 @@ header-includes:
 # * These packages are not necessary to complete the assignment and or only used 
 #   to provide an example. 
 packages <- c("knitr", "kableExtra", "magrittr", "readr", "geosphere", "dplyr",
-              "tidyr", "ggplot2", "scales", "leaflet", "htmltools")
+              "tidyr", "ggplot2", "scales", "leaflet", "htmltools",
+              "cowplot")
 
 install_me <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(install_me)) install.packages(install_me)
@@ -45,10 +46,11 @@ library(ggplot2)
 library(scales)
 library(leaflet)
 library(htmltools)
+library(cowplot)
 ```
 
 # Global Trajectory
-```{r obj1}
+```{r obj1, message=FALSE, warning=FALSE, fig.width=10}
 # Load Datasets
 confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
@@ -83,7 +85,7 @@ ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) +
 ```
 
 # Global Map
-```{r obj2}
+```{r obj2, message=FALSE, warning=FALSE, fig.width=9.5}
 # Get data form last date which represents total
 last_date <- names(confirmed_ds)[ncol(confirmed_ds)]
 confirmed_last<-confirmed_ds%>%select(Province.State, Country.Region, 
@@ -129,7 +131,7 @@ leaflet(dat) %>% addTiles() %>%
 ```
 
 # Narrowing Down Hot Spots
-```{r obj3}
+```{r obj3, message=FALSE, warning=FALSE, fig.width=10}
 # Combine Province/Country
 confirmed_last$Location <- ifelse(confirmed_last$Province.State == "", 
                                   paste(confirmed_last$Country.Region), 
@@ -196,7 +198,7 @@ total_ds %>%
 ```
 
 # Zooming Into Our State
-```{r obj4}
+```{r obj4, message=FALSE, warning=FALSE, fig.width=10}
 # Load Datasets
 confirmed_ds<-read.csv("time_series_covid19_confirmed_US.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
@@ -204,8 +206,15 @@ deaths_ds<-read.csv("time_series_covid19_deaths_US.csv",
                     header=TRUE, stringsAsFactors=FALSE)
 
 # Get totals per day through summation
-confirmed_sum<-confirmed_ds%>%filter(Province_State=="California")%>%select(-(1:11))%>%summarise_all(sum)
-death_sum<-deaths_ds%>%filter(Province_State=="California")%>%select(-(1:12))%>%summarise_all(sum)
+confirmed_sum<-confirmed_ds %>%
+  filter(Province_State=="California") %>%
+  select(-(1:11)) %>%
+  summarise_all(sum)
+
+death_sum<-deaths_ds %>%
+  filter(Province_State=="California") %>%
+  select(-(1:12)) %>% 
+  summarise_all(sum)
 
 # Merge datasets into one and add column for categories
 dat <- rbind(confirmed_sum, death_sum)
@@ -215,42 +224,83 @@ dat$dataset <- factor(c(rep("Confirmed", dim(confirmed_sum)[1]),
 data_long <- gather(dat, Dates, SumCases, -dataset, factor_key=TRUE)
 
 # Create Plot
-p1<-ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) + 
-  scale_color_discrete(name= "California Total",breaks=c("Confirmed", "Deaths")) +
+p1<-ggplot(data_long, aes(x=Dates, y=SumCases, color=dataset)) +
+  scale_color_discrete(name= "California Total", 
+                       breaks=c("Confirmed", "Deaths")) +
   geom_point() + ggtitle("California's Trajectory for COVID-19") + 
   scale_x_discrete(breaks=c("X2.1.20","X3.1.20","X4.1.20", "X5.1.20"),
                    labels=c("Feb", "Mar", "Apr", "May")) +
-  labs(y= "Cases", x = "Date") +
+  labs(y= "Cases", x= "") +
   scale_y_continuous(breaks=pretty_breaks(n=5), 
                      labels=scales::comma)+
-  geom_vline(xintercept="X3.19.20", linetype="dotted") 
-print(p1)
+  geom_vline(xintercept="X3.19.20", linetype="dotted")
 
-#Second scatter plot
-last_date <- names(confirmed_ds)[ncol(confirmed_ds)]
-top_confirmed_cities<-confirmed_ds%>%filter(Province_State=="California")%>%group_by(Admin2)%>%select(-(1:11))%>%summarise_all(sum)%>%arrange(-X5.14.20) #having a hard time making this the last column with last_date
+# Second scatter plot
+top_confirmed_cities<-confirmed_ds %>%
+  filter(Province_State=="California") %>%
+  group_by(Admin2) %>%
+  select(-(1:11)) %>%
+  summarise_all(sum) %>%
+  arrange_at(ncol(.), desc)
+
 dat<-top_confirmed_cities[1:3,]
+city_names<-c(dat[[1,1]], dat[[2,1]], dat[[3,1]])
 data_long <- gather(dat, Dates, SumCases, -Admin2, factor_key=TRUE)
 
 # Create Plot
 p2<-ggplot(data_long, aes(x=Dates, y=SumCases, color=Admin2)) + 
-  scale_color_discrete(name="Top Confirmed Cities", breaks=c("Los Angeles", "Riverside", "San Diego")) +
-  geom_point() + ggtitle("California Trajectory for COVID-19") + 
+  scale_color_discrete(name="Top Confirmed Cities", 
+                       breaks=c(city_names[1], city_names[2], city_names[3])) +
+  geom_point() +
   scale_x_discrete(breaks=c("X2.1.20","X3.1.20","X4.1.20", "X5.1.20"),
                    labels=c("Feb", "Mar", "Apr", "May")) +
   labs(y= "Cases", x = "Date") +
   scale_y_continuous(breaks=pretty_breaks(n=5), 
-                     labels=scales::comma)+
+                     labels=scales::comma) +
    geom_vline(xintercept="X3.19.20", linetype="dotted")
 
-print(p2)
-
+plot_grid(p1, p2, nrow = 2, ncol = 1, align="hv")
 
 ```
 
 # Digging Deeper
-```{r obj5}
+```{r obj5, message=FALSE, warning=FALSE, fig.width=10}
+# Rename last column because R...
+names(confirmed_ds)[ncol(confirmed_ds)]<-"Counts_c"
+names(deaths_ds)[ncol(deaths_ds)]<-"Counts_d"
 
+# Grab data for location population and counts on the last day
+confirmed_data<-select(confirmed_ds, Admin2, Province_State, Counts_c)
+deaths_data<-select(deaths_ds, Admin2, Province_State, Population, Counts_d)
+
+# Join data frames based on location
+total_data<-full_join(confirmed_data, deaths_data, 
+                       by=c("Admin2", "Province_State"))
+
+# Create Confirmations vs Population plot
+p1<-ggplot(total_data, aes(x=Population, y=Counts_c)) +
+  geom_point(color="blue") + ggtitle("Confirmations Vs. Population") +
+  scale_x_log10(breaks=c(2^13, 2^16, 2^19, 2^22), labels=scales::comma, 
+                         limits=c(2^12, 2^24)) +
+  scale_y_log10(breaks=c(2^6, 2^10, 2^14, 2^18), labels=scales::comma, 
+                limits=c(2^5, 2^19)) +
+  labs(y= "Confirmation Counts", x= "Population")
+
+# Create Deaths vs Confirmations plot
+p2<-ggplot(total_data, aes(x=Counts_c, y=Counts_d)) +
+  geom_point(color="red") + ggtitle("Deaths Vs. Confirmations") +
+  scale_x_log10(breaks=c(2^8, 2^12, 2^16), labels=scales::comma, 
+                         limits=c(2^7, 2^18)) +
+  scale_y_log10(breaks=c(2^5, 2^8, 2^11, 2^14), labels=scales::comma, 
+                limits=c(2^4, 2^16)) +
+  labs(y= "Death Counts", x= "Confirmation Counts")
+
+# Horizontially stack plots
+plot_grid(p1, p2, nrow = 1, ncol = 2, align="hv")
 
 ```
 
+# GitHub Log
+#```{bash gitlog} 
+#git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
+#```
