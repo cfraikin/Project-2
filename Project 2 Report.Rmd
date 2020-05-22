@@ -122,7 +122,9 @@ leaflet(dat) %>% addTiles() %>%
     label = paste(ifelse(dat$Province.State == "", 
                          dat$Country.Region, 
                          dat$Province.State)),
-    popup = paste(dat$dataset, ": ", dat$Count, sep="")
+    popup = paste(dat$dataset, ": ", 
+                  format(dat$Count, big.mark=",", scientific=FALSE), 
+                  sep="")
     ) %>%
   addLayersControl(
     overlayGroups = c("Confirmed", "Recovered", "Deaths"),
@@ -305,3 +307,85 @@ plot_grid(p1, p2, nrow = 1, ncol = 2, align="hv")
 #```{bash gitlog} 
 #git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
 #```
+
+Bash script not working on my PC.  This is the output when running the script from the command line:
+
+Subject: Updating datasets to latest, small update to problems 2 & 3 to use commas in numbering   
+Author: 007Stylex007 (Benjamin Kelly)   
+Date: Thu, 21 May 2020 18:31:15 -0700   
+Body:   
+
+Subject: Uploading current HTML Document   
+Author: 007Stylex007 (Benjamin Kelly)   
+Date: Wed, 20 May 2020 21:06:27 -0700   
+Body:   
+
+Subject: Updates to problem 4 to enable it to work with generic data.  Implemented problem 5   
+Author: 007Stylex007 (Benjamin Kelly)   
+Date: Wed, 20 May 2020 20:54:43 -0700   
+Body:   
+
+Subject: Revisions to Question 4   
+Author: Chanel Fraikin   
+Date: Wed, 20 May 2020 15:56:58 -0700   
+Body:   
+
+Subject: Implemented Question 4   
+Author: Chanel Fraikin   
+Date: Wed, 20 May 2020 15:45:23 -0700   
+Body:   
+
+Subject: Minor improvements with problem 2.  Implemented problem 3.   
+Author: 007Stylex007 (Benjamin Kelly)   
+Date: Tue, 19 May 2020 22:14:04 -0700   
+Body:   
+
+Subject: Updated problems 1 & 2 to be used with generic data.  Updated labels and popups on map to be dynamic based on data frame.   
+Author: 007Stylex007 (Benjamin Kelly)   
+Date: Tue, 19 May 2020 20:06:40 -0700   
+Body:   
+
+Subject: Reverting document format to html   
+Author: 007Stylex007 (Benjamin Kelly)   
+Date: Tue, 19 May 2020 18:36:15 -0700   
+Body:   
+
+Subject: Merge branch 'master' of https://github.com/cfraikin/Project-2   
+Author: Chanel Fraikin   
+Date: Mon, 18 May 2020 20:28:09 -0700   
+Body:   
+
+Subject: Obj 2 draft complete   
+Author: Chanel Fraikin   
+Date: Mon, 18 May 2020 20:27:54 -0700   
+Body:   
+
+Subject: Updated report format and updated problem 1 y axis scale   
+Author: 007Stylex007 (Benjamin Kelly)   
+Date: Mon, 18 May 2020 19:30:45 -0700   
+Body:   
+
+Subject: added rest of data and did first objective   
+Author: Chanel Fraikin   
+Date: Mon, 18 May 2020 18:09:35 -0700   
+Body:   
+
+Subject: downloaded US data on 5/15/20   
+Author: Chanel Fraikin   
+Date: Fri, 15 May 2020 13:51:05 -0700   
+Body:   
+
+Subject: Created report   
+Author: Chanel Fraikin   
+Date: Fri, 15 May 2020 13:36:51 -0700   
+Body:   
+
+Subject: Update README.md   
+Author: cfraikin   
+Date: Fri, 15 May 2020 13:26:51 -0700   
+Body:   
+
+Subject: Initial commit   
+Author: cfraikin   
+Date: Fri, 15 May 2020 13:24:42 -0700   
+Body:   
