@@ -160,21 +160,21 @@ max_rows<-max(nrow(confirmed_totals), nrow(recovered_totals),
 
 # Wanted to use cbind.fill here, but can't because R...
 if (nrow(confirmed_totals) < max_rows) {
-  empty_df<-data.frame(matrix("NA", nrow = (max_rows - nrow(confirmed_totals)), 
+  empty_df<-data.frame(matrix(NA, nrow = (max_rows - nrow(confirmed_totals)), 
                               ncol = 2))
   names(empty_df)<-c("Location_c", "Count_c")
   confirmed_totals<-rbind(confirmed_totals, empty_df)
 }
 
 if (nrow(recovered_totals) < max_rows) {
-  empty_df<-data.frame(matrix("NA", nrow = (max_rows - nrow(recovered_totals)), 
+  empty_df<-data.frame(matrix(NA, nrow = (max_rows - nrow(recovered_totals)), 
                               ncol = 2))
   names(empty_df)<-c("Location_r", "Count_r")
   recovered_totals<-rbind(recovered_totals, empty_df)
 }
 
 if (nrow(deaths_totals) < max_rows) {
-  empty_df<-data.frame(matrix("NA", nrow = (max_rows - nrow(deaths_totals)), 
+  empty_df<-data.frame(matrix(NA, nrow = (max_rows - nrow(deaths_totals)), 
                               ncol = 2))
   names(empty_df)<-c("Location_d", "Count_d")
   deaths_totals<-rbind(deaths_totals, empty_df)
@@ -189,6 +189,7 @@ total_ds<-cbind(data.frame(Rank=rownames(total_ds)), total_ds)
 total_ds %>%
   kable(col.names = c("Rank", "Country", "Count", "Country", 
                       "Count", "Country", "Count"),
+        format.args = list(big.mark = ",", scientific = FALSE),
         caption="Table of Top Countries") %>%
   kable_styling("striped") %>%
   add_header_above(c(" " = 1, "Confirmations" = 2, 
